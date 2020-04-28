@@ -60,4 +60,5 @@ crashlytics-build.properties
 
 #ARCore Package
 /Assets/GoogleARCore/
+/Assets/GoogleARCore.meta
 
