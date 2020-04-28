@@ -7,33 +7,51 @@ using GoogleARCore.Examples.AugmentedFaces;
 
 public class MainDirector : MonoBehaviour
 {
-    private GameObject arCamera;
-    private GameObject faceTrack;
+    private Camera arCamera;
+    private ARCoreAugmentedFaceRig faceTrack;
+    private TextureRenderWapper textureRender;
 
-    private GameObject logText1;
+    private Text logText1;
+    private RawImage camImg;
 
     // Start is called before the first frame update
     void Start()
     {
-        this.arCamera = GameObject.Find("First Person Camera");
-        this.faceTrack = GameObject.Find("fox_sample");
-        this.logText1 = GameObject.Find("LogText1");
+        this.arCamera = GameObject.Find("First Person Camera").GetComponent<Camera>();
+        this.textureRender = GameObject.Find("FaceTrackController").GetComponent<TextureRenderWapper>();
+        this.faceTrack = GameObject.Find("fox_sample").GetComponent<ARCoreAugmentedFaceRig>();
+
+        this.logText1 = GameObject.Find("LogText1").GetComponent<Text>();
+        this.camImg = GameObject.Find("CameraImage").GetComponent<RawImage>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        var faceTrackComp = this.faceTrack.GetComponent<ARCoreAugmentedFaceRig>();
-        var arCameraComp = this.arCamera.GetComponent<Camera>();
+        bool isProcessOk = false;
+        
+        if (this.textureRender.GetIsCameraCaptureOk())
+        {
+            if (this.faceTrack.GetIsFaceTrackOk())
+            {
+                isProcessOk = true;
+            }
+        }
 
-        if (faceTrackComp.GetIsFaceTrackOk())
+        if (isProcessOk)
         {
             Rect faceRect = this.DetectFaceRectInScreen();
+
+            Texture2D texture = this.textureRender.FrameTexture;
+            if (texture == null) return;
+
+            this.camImg.texture = texture;
+
             this.logText1.GetComponent<Text>().text = faceRect.ToString();
         }
         else
         {
-            this.logText1.GetComponent<Text>().text = "";
+            this.logText1.text = "";
         }
     }
 
