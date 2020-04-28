@@ -28,7 +28,7 @@ namespace GoogleARCore.Examples.AugmentedFaces
     /// <summary>
     /// Controller for the AugmentedFaces sample scene.
     /// </summary>
-    public class AugmentedFacesExampleController : MonoBehaviour
+    public class ArSortingDeepHatController : MonoBehaviour
     {
         /// <summary>
         /// The game object that renders the face attachment on an Augmented Face.

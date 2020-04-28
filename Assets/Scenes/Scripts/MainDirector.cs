@@ -29,6 +29,7 @@ public class MainDirector : MonoBehaviour
         if (faceTrackComp.GetIsFaceTrackOk())
         {
             Rect faceRect = this.DetectFaceRectInScreen();
+            this.logText1.GetComponent<Text>().text = faceRect.ToString();
         }
         else
         {
