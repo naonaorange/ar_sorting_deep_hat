@@ -61,4 +61,6 @@ crashlytics-build.properties
 #ARCore Package
 /Assets/GoogleARCore/
 /Assets/GoogleARCore.meta
+/Assets/PlayServicesResolver/
+/Assets/PlayServicesResolver.meta
 
