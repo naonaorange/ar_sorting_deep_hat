@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/ArSortingDeepHat/Scenes/ArSortingDeepHat.unity
+    guid: 7d2be221c0e8f4e259a08279fab0da42
   m_configObjects: {}
