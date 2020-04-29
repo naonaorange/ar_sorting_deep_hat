@@ -15,11 +15,13 @@ public class MainDirector : MonoBehaviour
     private ARCoreAugmentedFaceRig faceTrack;
     private TextureRenderWapper textureRender;
 
+    //Debug UI
     private Text logText1;
     private Text logText2;
     private Text logText3;
     private RawImage camImg;
 
+    //実行周期
     private float timeSpan = 3.0f;
     private float timeDelta = 0;
 
@@ -56,7 +58,6 @@ public class MainDirector : MonoBehaviour
 
             if (isProcessOk)
             {
-
                 Texture2D texture = this.textureRender.FrameTexture;
                 if (texture == null) return;
 
@@ -69,7 +70,7 @@ public class MainDirector : MonoBehaviour
                 */
                 Core.rotate(srcImg, srcImg, Core.ROTATE_90_COUNTERCLOCKWISE);
 
-                OpenCVForUnity.CoreModule.Rect faceRect = this.DetectFaceRectInImage(srcImg.height(), srcImg.width());
+                OpenCVForUnity.CoreModule.Rect faceRect = this.GetFaceRectInImage(srcImg.height(), srcImg.width());
                 /*
                 this.logText1.GetComponent<Text>().text = faceRect.ToString();
                 this.logText2.GetComponent<Text>().text = Screen.width + "  " + Screen.height;
@@ -79,6 +80,8 @@ public class MainDirector : MonoBehaviour
                 Utils.matToTexture2D(dispImg, dispTexture);
                 */
 
+                //顔範囲を正方形にする
+                //faceRect.width = faceRect.height;
                 Mat faceImg = new Mat(srcImg, faceRect);
                 
                 Texture2D dispTexture = new Texture2D(faceImg.width(), faceImg.height(), TextureFormat.RGBA32, false);
@@ -90,17 +93,16 @@ public class MainDirector : MonoBehaviour
                 //dispImg.Dispose();
                 faceImg.Dispose();
             }
-        else
-        {
-            this.logText1.text = "";
-            this.logText2.text = "";
-            this.logText3.text = "";
-        }
-
+            else
+            {
+                this.logText1.text = "";
+                this.logText2.text = "";
+                this.logText3.text = "";
+            }
         }
     }
 
-    private OpenCVForUnity.CoreModule.Rect DetectFaceRectInImage(int height, int width)
+    private OpenCVForUnity.CoreModule.Rect GetFaceRectInImage(int height, int width)
     {
         var rect = DetectFaceRect();
 
@@ -108,12 +110,13 @@ public class MainDirector : MonoBehaviour
         float hScale = (float)height / Screen.height;
 
         float x = rect.x * wScale;
+        //画像をX軸で反転させる
+        //Unityの左下が[0, 0]の座標系から、OpenCVの左上が[0, 0]の座標系に変換する
         float y = (Screen.height - rect.y) * hScale;
         float w = rect.width * wScale;
         float h = rect.height * hScale;
 
         return new OpenCVForUnity.CoreModule.Rect((int)x, (int)y, (int)w, (int)h);
-
     }
 
     private OpenCVForUnity.CoreModule.Rect DetectFaceRect()
@@ -131,7 +134,9 @@ public class MainDirector : MonoBehaviour
         headLeftPos = arCameraComp.WorldToScreenPoint(headLeftPos);
         headRightPos = arCameraComp.WorldToScreenPoint(headRightPos);
 
+        //ARCoreで検出した顔範囲からの範囲拡大倍率
         float scale = 1.0f;
+
         float width = (headRightPos.x - headLeftPos.x) * scale;
         float height = ((headLeftPos.y - nosePos.y) * 2) * scale;
 
