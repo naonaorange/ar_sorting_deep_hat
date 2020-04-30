@@ -55,121 +55,95 @@ public class MainDirector : MonoBehaviour
         
     }
 
-    public void Precict()
+    public void Execute()
     {
-        try
-        {
-            Texture2D srcTexture = Resources.Load("harry") as Texture2D;
-            this.debugText1.text = srcTexture.width + "  " + srcTexture.height;
-
-            Mat srcImg = new Mat(srcTexture.width, srcTexture.height, CvType.CV_8UC3);
-            Utils.texture2DToMat(createReadabeTexture2D(srcTexture), srcImg);
-
-            Mat inputImg = new Mat(srcImg.width(), srcImg.height(), CvType.CV_32FC3);
-            for (int w = 0; w < inputImg.width(); w++)
-            {
-                for (int h = 0; h < inputImg.height(); h++)
-                {
-                    double[] p = srcImg.get(w, h);
-                    double b = p[0];
-                    double g = p[1];
-                    double r = p[2];
-
-                    double[] pp = new double[] { b / 255.0, g / 255.0, r / 255.0 };
-                    inputImg.put(w, h, pp);
-                }
-            }
-
-            Mat blob = Dnn.blobFromImage(inputImg);
-            this.net.setInput(blob);
-            Mat prob = net.forward();
-            
-            (int max_idx, float max_value) = get_max_idx(prob);
-            this.debugText2.text = "idx : " + max_idx + " , value : " + max_value.ToString("F2");
-            
-            Texture2D dispTexture = new Texture2D(srcImg.cols(), srcImg.rows(), TextureFormat.RGBA32, false);
-            Utils.matToTexture2D(srcImg, dispTexture);
-            this.debugImg1.texture = dispTexture;
-        }
-        catch(Exception e)
-        {
-            Debug.Log(e);
-
-        }
+        Predict();
     }
 
-    public void Predict2()
+    public bool Predict()
     {
-        bool isProcessOk = false;
+        bool ret = false;
+        bool isStartOk = false;
 
         if (this.textureRender.GetIsCameraCaptureOk())
         {
             if (this.faceTrack.GetIsFaceTrackOk())
             {
-                isProcessOk = true;
+                isStartOk = true;
             }
         }
 
-        if (isProcessOk)
+        if (isStartOk)
         {
-            Texture2D srcTexture = this.textureRender.FrameTexture;
-            if (srcTexture == null) return;
+            Mat faceImg = new Mat(IMG_WIDTH, IMG_HEIGHT, CvType.CV_8UC3);
+            bool isOk = GetFaceImg(faceImg);
+            if (isOk == false) return false;
 
-            Mat srcImg = new Mat(srcTexture.height, srcTexture.width, CvType.CV_8UC3);
-            Utils.texture2DToMat(srcTexture, srcImg);
+            Mat inputData = new Mat(faceImg.width(), faceImg.height(), CvType.CV_32FC3);
+            ConvertToInputData(faceImg, inputData);
 
-            //Mat dispImg = new Mat(texture.height, texture.width, CvType.CV_8UC3);
-            //Core.rotate(srcImg, dispImg, Core.ROTATE_90_COUNTERCLOCKWISE);
+            Mat blob = Dnn.blobFromImage(inputData);
+            if (blob == null) return false;
 
-            Core.rotate(srcImg, srcImg, Core.ROTATE_90_COUNTERCLOCKWISE);
-            
-            OpenCVForUnity.CoreModule.Rect faceRect = this.GetFaceRectInImage(srcImg.height(), srcImg.width());
-
-            //Imgproc.rectangle(dispImg, faceRect, new Scalar(0, 0, 200), 3, 4);
-            //Texture2D dispTexture = new Texture2D(dispImg.width(), dispImg.height(), TextureFormat.RGBA32, false);
-            //Utils.matToTexture2D(dispImg, dispTexture);
-
-            Mat faceImg = new Mat(srcImg, faceRect);
-
-
-            Mat srcImg2 = new Mat(IMG_WIDTH, IMG_HEIGHT, CvType.CV_8UC3);
-            Size s = new Size(IMG_WIDTH, IMG_HEIGHT);
-            Imgproc.resize(faceImg, srcImg2, s);
-
-            Texture2D t = new Texture2D(srcImg2.cols(), srcImg2.rows(), TextureFormat.RGBA32, false);
-            Utils.matToTexture2D(srcImg2, t);
-            this.debugImg2.texture = t;
-
-            Mat inputMat = new Mat(srcImg2.width(), srcImg2.height(), CvType.CV_32FC3);
-
-            for (int h = 0; h < srcImg2.height(); h++)
-            {
-                for (int w = 0; w < srcImg2.width(); w++)
-                {
-                    double[] p = srcImg2.get(w, h);
-                    double b = p[0];
-                    double g = p[1];
-                    double r = p[2];
-
-                    double[] pp = new double[] { b / 255.0, g / 255.0, r / 255.0 };
-                    inputMat.put(w, h, pp);
-                }
-            }
-
-            Mat blob = Dnn.blobFromImage(inputMat);
             net.setInput(blob);
             Mat prob = net.forward();
+            if (prob == null) return false;
 
             (int max_idx, float max_value) = get_max_idx(prob);
             this.debugText3.text = "idx : " + max_idx + " , value : " + max_value.ToString("F2");
 
-            srcImg.Dispose();
-            srcImg2.Dispose();
+            Texture2D t = new Texture2D(faceImg.cols(), faceImg.rows(), TextureFormat.RGBA32, false);
+            Utils.matToTexture2D(faceImg, t);
+            this.debugImg2.texture = t;
+
             faceImg.Dispose();
-            inputMat.Dispose();
+            inputData.Dispose();
+
+            ret = true;
         }
-        else
+
+        return ret;
+    }
+
+    private bool GetFaceImg(Mat faceImg)
+    {
+        Texture2D texture = this.textureRender.FrameTexture;
+        if (texture == null) return false;
+
+        Mat srcImg = new Mat(texture.height, texture.width, CvType.CV_8UC3);
+        Utils.texture2DToMat(texture, srcImg);
+
+        Core.rotate(srcImg, srcImg, Core.ROTATE_90_COUNTERCLOCKWISE);
+        
+        OpenCVForUnity.CoreModule.Rect faceRect = this.GetFaceRectInImage(srcImg.height(), srcImg.width());
+        if ((faceRect.x < 0) || (faceRect.y < 0)) return false;
+        if (srcImg.width() < (faceRect.x + faceRect.width)) return false;
+        if (srcImg.height() < (faceRect.y + faceRect.height)) return false;
+
+        Mat img = new Mat(srcImg, faceRect);
+
+        Imgproc.resize(img, faceImg, new Size(IMG_WIDTH, IMG_HEIGHT));
+
+        srcImg.Dispose();
+        img.Dispose();
+
+        return true;
+    }
+
+    private void ConvertToInputData(Mat input, Mat output)
+    {
+        for (int h = 0; h < input.height(); h++)
         {
+            for (int w = 0; w < input.width(); w++)
+            {
+                double[] p = input.get(w, h);
+                double b = p[0];
+                double g = p[1];
+                double r = p[2];
+
+                double[] pp = new double[] { b / 255.0, g / 255.0, r / 255.0 };
+                output.put(w, h, pp);
+            }
         }
     }
 
@@ -219,7 +193,7 @@ public class MainDirector : MonoBehaviour
     }
 
 
-    Texture2D createReadabeTexture2D(Texture2D texture2d)
+    Texture2D CreateReadabeTexture2D(Texture2D texture2d)
     {
         RenderTexture renderTexture = RenderTexture.GetTemporary(
                     texture2d.width,
