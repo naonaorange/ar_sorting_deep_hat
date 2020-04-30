@@ -172,5 +172,43 @@ namespace GoogleARCore.Examples.AugmentedFaces
                 }
             }
         }
+
+
+        public bool GetIsFaceTrackOk()
+        {
+            if (!Application.isPlaying) return false;
+            if (!AutoBind) return false;
+            if (m_AugmentedFace == null) return false;
+
+            if (m_AugmentedFace.TrackingState != TrackingState.Tracking) return false;
+
+            return true;
+        }
+
+        public Vector3 GetFacePosition()
+        {
+            Vector3 pos = new Vector3();
+            if (m_AugmentedFace.TrackingState == TrackingState.Tracking)
+            {
+                pos = m_AugmentedFace.CenterPose.position;
+            }
+
+            return pos;
+        }
+
+        public Vector3 GetFaceRegionPosition(AugmentedFaceRegion region)
+        {
+            Vector3 pos = new Vector3();
+            if (m_AugmentedFace.TrackingState == TrackingState.Tracking)
+            {
+                Pose pose = m_AugmentedFace.GetRegionPose(region);
+                pos = pose.position;
+            }
+
+            return pos;
+        }
+
+
+
     }
 }
