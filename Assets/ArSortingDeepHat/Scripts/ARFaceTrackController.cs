@@ -53,15 +53,6 @@ namespace GoogleARCore.Examples.ARFaceTrack
             Application.targetFrameRate = 60;
         }
 
-        public void Start()
-        {
-            Text logText1 = GameObject.Find("DebugText1").GetComponent<Text>();
-
-            Texture2D t = Resources.Load("harry") as Texture2D;
-            logText1.text = t.width + "  " + t.height;
-
-        }
-
         /// <summary>
         /// The Unity Update method.
         /// </summary>
