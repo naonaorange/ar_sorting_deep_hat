@@ -14,6 +14,10 @@ using GoogleARCore.Examples.AugmentedFaces;
 public class MainDirector : MonoBehaviour
 {
     private Camera arCamera;
+    private GameObject guideFace;
+    private Text msgText;
+    private GameObject curtainImage;
+
     private ARCoreAugmentedFaceRig faceTrack;
     private TextureRenderWapper textureRender;
 
@@ -36,6 +40,11 @@ public class MainDirector : MonoBehaviour
     void Start()
     {
         this.arCamera = GameObject.Find("First Person Camera").GetComponent<Camera>();
+        this.guideFace = GameObject.Find("GuideFace");
+        this.msgText = GameObject.Find("MessageText").GetComponent<Text>();
+        //this.curtainImage = GameObject.Find("CurtainImage");
+
+
         this.textureRender = GameObject.Find("ARFaceTrackController").GetComponent<TextureRenderWapper>();
         this.faceTrack = GameObject.Find("ModelRoot").GetComponent<ARCoreAugmentedFaceRig>();
 
@@ -47,6 +56,12 @@ public class MainDirector : MonoBehaviour
 
         string model_filepath = Utils.getFilePath(MODEL_FILE_PATH);
         this.net = Dnn.readNetFromTensorflow(model_filepath);
+
+
+        this.msgText.text = "ボタンを押して寮を決めよう！";
+
+        //this.curtainImage.SetActive(false);
+        this.guideFace.SetActive(false);
     }
 
     // Update is called once per frame
@@ -55,13 +70,62 @@ public class MainDirector : MonoBehaviour
         
     }
 
+    public void Debug()
+    {
+    }
+
     public void Execute()
     {
         this.debugText1.text = "0";
-        Predict();
+
+        this.guideFace.SetActive(true);
+        /*
+        Texture2D t = Resources.Load("red_curtain") as Texture2D;
+        this.curtainImage.GetComponent<RawImage>().texture = t;
+        this.curtainImage.SetActive(true);
+        */
+        hogwartsHouse house = hogwartsHouse.Gryffindor;
+        float value = 0.0f;
+
+        bool isOk = Predict(ref house, ref value);
+
+        this.msgText.text = house.ToString();
     }
 
-    public bool Predict()
+    private enum hogwartsHouse
+    {
+        Gryffindor,
+        Hufflpuff,
+        Ravenclaw,
+        Slytherin
+    }
+
+    private hogwartsHouse ConvertIdx(int idx)
+    {
+        hogwartsHouse house = hogwartsHouse.Gryffindor;
+
+        if(idx == 0)
+        {
+            house = hogwartsHouse.Gryffindor;
+        }
+        else if(idx == 1)
+        {
+            house = hogwartsHouse.Hufflpuff;
+        }
+        else if(idx == 2)
+        {
+            house = hogwartsHouse.Ravenclaw;
+        }
+        else if(idx == 3)
+        {
+            house = hogwartsHouse.Slytherin;
+        }
+
+        return house;
+
+    }
+
+    private bool Predict(ref hogwartsHouse house, ref float value)
     {
         bool ret = false;
         bool isStartOk = false;
@@ -97,8 +161,10 @@ public class MainDirector : MonoBehaviour
             if (prob == null) return false;
 
             this.debugText1.text = "6";
-            (int max_idx, float max_value) = get_max_idx(prob);
-            this.debugText3.text = "idx : " + max_idx + " , value : " + max_value.ToString("F2");
+            int idx = 0;
+            (idx, value) = get_max_idx(prob);
+            house = ConvertIdx(idx);
+            this.debugText3.text = "idx : " + idx + " , value : " + value.ToString("F2");
 
             this.debugText1.text = "7";
             Texture2D t = new Texture2D(faceImg.cols(), faceImg.rows(), TextureFormat.RGBA32, false);
@@ -235,7 +301,6 @@ public class MainDirector : MonoBehaviour
                 max_value = tmp;
                 max_idx = i;
             }
-            Debug.Log(i + " : " + tmp.ToString("F4"));
         }
         return (max_idx, max_value);
     }
