@@ -37,7 +37,7 @@ public class MainDirector : MonoBehaviour
     {
         this.arCamera = GameObject.Find("First Person Camera").GetComponent<Camera>();
         this.textureRender = GameObject.Find("ARFaceTrackController").GetComponent<TextureRenderWapper>();
-        this.faceTrack = GameObject.Find("fox_sample").GetComponent<ARCoreAugmentedFaceRig>();
+        this.faceTrack = GameObject.Find("ModelRoot").GetComponent<ARCoreAugmentedFaceRig>();
 
         this.debugText1 = GameObject.Find("DebugText1").GetComponent<Text>();
         this.debugText2 = GameObject.Find("DebugText2").GetComponent<Text>();
@@ -57,6 +57,7 @@ public class MainDirector : MonoBehaviour
 
     public void Execute()
     {
+        this.debugText1.text = "0";
         Predict();
     }
 
@@ -64,6 +65,8 @@ public class MainDirector : MonoBehaviour
     {
         bool ret = false;
         bool isStartOk = false;
+
+        this.debugText1.text = "1";
 
         if (this.textureRender.GetIsCameraCaptureOk())
         {
@@ -75,23 +78,29 @@ public class MainDirector : MonoBehaviour
 
         if (isStartOk)
         {
+            this.debugText1.text = "2";
             Mat faceImg = new Mat(IMG_WIDTH, IMG_HEIGHT, CvType.CV_8UC3);
             bool isOk = GetFaceImg(faceImg);
             if (isOk == false) return false;
 
+            this.debugText1.text = "3";
             Mat inputData = new Mat(faceImg.width(), faceImg.height(), CvType.CV_32FC3);
             ConvertToInputData(faceImg, inputData);
 
+            this.debugText1.text = "4";
             Mat blob = Dnn.blobFromImage(inputData);
             if (blob == null) return false;
 
+            this.debugText1.text = "5";
             net.setInput(blob);
             Mat prob = net.forward();
             if (prob == null) return false;
 
+            this.debugText1.text = "6";
             (int max_idx, float max_value) = get_max_idx(prob);
             this.debugText3.text = "idx : " + max_idx + " , value : " + max_value.ToString("F2");
 
+            this.debugText1.text = "7";
             Texture2D t = new Texture2D(faceImg.cols(), faceImg.rows(), TextureFormat.RGBA32, false);
             Utils.matToTexture2D(faceImg, t);
             this.debugImg2.texture = t;
